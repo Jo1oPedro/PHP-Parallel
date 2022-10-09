@@ -23,6 +23,8 @@ foreach($studentList as $key => $student) {
             0
         );
 
+        $channel->send($points);
+
         printf('%s made %d poinst today%s', $student->fullName(), $points, PHP_EOL);
 
         return $points;
@@ -30,6 +32,14 @@ foreach($studentList as $key => $student) {
 
 }
 
+$totalPointsWithChannel = 0;
+for($i = 0; $i < count($studentList); $i++) {
+    $totalPointsWithChannel += $channel->recv();
+}
+
+$channel->close();
+
 $totalPoints = array_reduce($futures, fn($totalPoints, $future) => $totalPoints += $future->value(), 0) . PHP_EOL;
 
+printf('We had a total of %d points today%s', $totalPointsWithChannel, PHP_EOL);
 printf('We had a total of %d points today%s', $totalPoints, PHP_EOL);
