@@ -7,29 +7,33 @@ use parallel\Channel;
 $repository = new \Alura\Threads\Student\InMemoryStudentRepository();
 $studentList = $repository->all();
 
+$studentChunks = array_chunk($studentList, ceil(count($studentList) / 4));
+
 $totalPoints = 0;
 $runTimes = [];
 $futures = [];
 $channel = Channel::make('points');
-foreach($studentList as $key => $student) {
-    $activities = $repository->activitiesInADay($student);
+foreach($studentChunks as $key => $studentChunk) {
 
     $runTimes[$key] = new Runtime(__DIR__ . '/vendor/autoload.php');
 
-    $futures[] = $runTimes[$key]->run(function (array $activities, \Alura\Threads\Student\Student $student, Channel $channel) {
-         $points = array_reduce(
-            $activities,
-            fn (int $total, \Alura\Threads\Activity\Activity $activity) => $total + $activity->points(),
-            0
-        );
+    foreach($studentChunk as $student) {
+        $activities = $repository->activitiesInADay($student);
 
-        $channel->send($points);
+        $futures[] = $runTimes[$key]->run(function (array $activities, \Activity\Threads\Student\Student $student, Channel $channel) {
+            $points = array_reduce(
+                $activities,
+                fn (int $total, \Activity\Threads\Activity\Activity $activity) => $total + $activity->points(),
+                0
+            );
 
-        printf('%s made %d poinst today%s', $student->fullName(), $points, PHP_EOL);
+            $channel->send($points);
 
-        return $points;
-    }, [$activities, $student, $channel]);
+            printf('%s made %d poinst today%s', $student->fullName(), $points, PHP_EOL);
 
+            return $points;
+        }, [$activities, $student, $channel]);
+    }
 }
 
 $totalPointsWithChannel = 0;
