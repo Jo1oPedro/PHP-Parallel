@@ -17,6 +17,5 @@ function isPrime(float $number): bool
             return false;
         }
     }
-
     return true;
 }
